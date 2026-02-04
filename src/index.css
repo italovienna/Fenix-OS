@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 @layer base {
   body {
     @apply bg-berserk-dark text-berserk-text min-h-screen antialiased selection:bg-berserk-red selection:text-white relative;

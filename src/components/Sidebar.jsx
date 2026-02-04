@@ -1,13 +1,16 @@
 import React from 'react';
-import { Sword, Wallet, Activity, Book, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { LayoutDashboard, Wallet, Dumbbell, Store, BookOpen, LogOut, Sword, Coins, Scroll, Skull, ShoppingBag, Sparkles, Swords } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
     const navItems = [
-        { id: 'inicio', name: 'Início', icon: Sword },
-        { id: 'financeiro', name: 'Financeiro', icon: Wallet },
-        { id: 'rituais', name: 'Rituais', icon: Activity },
-        { id: 'estudos', name: 'Estudos', icon: Book },
+        { id: 'inicio', label: 'Início', icon: Swords },
+        { id: 'financeiro', label: 'Financeiro', icon: Coins },
+        { id: 'rituais', label: 'Rituais', icon: Skull },
+        { id: 'estudos', label: 'Estudos', icon: Scroll },
+        { id: 'oraculo', label: 'Oráculo', icon: Sparkles },
+        { id: 'mercado', label: 'Mercado', icon: ShoppingBag },
     ];
 
     return (
@@ -42,18 +45,18 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
                         whileHover={{ x: 10, backgroundColor: "#7f1d1d", color: "white" }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setActiveTab(item.id)}
-                        className={`w-full flex items-center gap-4 px-4 py-3 rounded-sm transition-colors duration-300 group text-left
-              ${activeTab === item.id
-                                ? 'bg-[#7f1d1d] text-white shadow-glow-red-strong border-l-2 border-white'
-                                : 'text-[#525252]'
+                        className={`w-full flex items-center gap-4 px-6 py-4 rounded-md transition-colors duration-300 group text-left
+                            ${activeTab === item.id
+                                ? 'bg-[#7f1d1d] text-white shadow-glow-red-strong border-l-4 border-white'
+                                : 'text-[#a3a3a3] hover:text-white'
                             }`}
                     >
                         <item.icon
-                            className={`w-5 h-5 transition-colors duration-300
-                ${activeTab === item.id ? 'text-white' : 'text-[#7f1d1d] group-hover:text-white'}
-              `}
+                            className={`w-6 h-6 transition-colors duration-300
+                                ${activeTab === item.id ? 'text-white' : 'text-[#7f1d1d] group-hover:text-white'}
+                            `}
                         />
-                        <span className="uppercase text-xs font-bold tracking-wider">{item.name}</span>
+                        <span className="uppercase text-sm font-bold tracking-wider">{item.label}</span>
                     </motion.button>
                 ))}
             </nav>

@@ -6,8 +6,23 @@ import Dashboard from './components/Dashboard';
 import FinancialHub from './components/FinancialHub';
 import Rituals from './components/Rituals';
 import StudyHub from './components/StudyHub';
-import { Dumbbell, BookOpen, Droplets, Skull, Calculator, Brain, FileText } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import Market from './components/Market';
+import GlobalAudioPlayer from './components/GlobalAudioPlayer';
+import OracleView from './components/OracleView';
+import { AudioProvider } from './contexts/AudioContext';
+// New Thematic Icons
+import {
+  Swords, Coins, Scroll, Skull, ShoppingBag,
+  Dumbbell, BookOpen, Droplets, Calculator, Brain, FileText, Anchor // Fallbacks
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+
+// --- ANIMATION VARIANTS (Smoke/Mist Effect) ---
+const pageTransition = {
+  initial: { opacity: 0, scale: 0.98, filter: 'blur(5px)' },
+  animate: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.4, ease: "easeOut" } },
+  exit: { opacity: 0, scale: 1.02, filter: 'blur(5px)', transition: { duration: 0.3, ease: "easeIn" } }
+};
 
 function App() {
   const [session, setSession] = useState(null);
@@ -20,16 +35,21 @@ function App() {
 
   // Data State (Defaults)
   const [xpData, setXpData] = useState({ currentXp: 0, level: 21 });
+  const [userProfile, setUserProfile] = useState({
+    jobTitle: 'Struggler',
+    mainGoal: 'Banco do Brasil 2027',
+    badges: [] // Initial empty badges
+  });
 
   const [habits, setHabits] = useState([
     { id: 1, name: 'Calistenia', iconName: 'Dumbbell', completed: false },
-    { id: 2, name: 'Estudar BB', iconName: 'BookOpen', completed: false },
+    { id: 2, name: 'Estudar BB', iconName: 'Scroll', completed: false },
     { id: 3, name: 'Beber Água', iconName: 'Droplets', completed: false },
     { id: 4, name: 'Mewing', iconName: 'Skull', completed: false },
   ]);
 
   const [studySubjects, setStudySubjects] = useState([
-    { id: 1, name: 'Língua Portuguesa', iconName: 'BookOpen', progress: 35 },
+    { id: 1, name: 'Língua Portuguesa', iconName: 'Scroll', progress: 35 },
     { id: 2, name: 'Matemática Financeira', iconName: 'Calculator', progress: 10 },
     { id: 3, name: 'Conhecimentos Bancários', iconName: 'Brain', progress: 50 },
     { id: 4, name: 'Atualidades do Mercado', iconName: 'FileText', progress: 20 },
@@ -77,20 +97,13 @@ function App() {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userId,
-            xp: 0,
-            level: 21,
-            habits: habits,
-            studies: studySubjects,
-            financials: financials,
-            updated_at: new Date()
-          });
-        if (!insertError) {
-          // Retry fetch if insertion worked
-        }
+        await supabase.from('profiles').upsert({
+          id: userId,
+          xp: 0, level: 21,
+          habits, studies: studySubjects, financials,
+          user_metadata: userProfile,
+          updated_at: new Date()
+        });
       }
 
       if (data) {
@@ -98,6 +111,8 @@ function App() {
         if (data.habits) setHabits(data.habits);
         if (data.studies) setStudySubjects(data.studies);
         if (data.financials) setFinancials(data.financials);
+        if (data.user_metadata) setUserProfile(data.user_metadata);
+        else if (data.job_title) setUserProfile({ jobTitle: data.job_title, mainGoal: data.main_goal || '' });
       }
     } finally {
       setLoading(false);
@@ -105,21 +120,25 @@ function App() {
   };
 
   // --- CLOUD SYNC ---
-  const syncToCloud = async (userId, newXpData, newHabits, newStudies, newFinancials) => {
+  const syncToCloud = async (userId, newXpData, newHabits, newStudies, newFinancials, newUserProfile) => {
     setSynced(false);
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({
-        id: userId,
-        xp: newXpData.currentXp,
-        level: newXpData.level,
-        habits: newHabits,
-        studies: newStudies,
-        financials: newFinancials,
-        updated_at: new Date()
-      });
+    const payload = {
+      id: userId,
+      updated_at: new Date(),
+      xp: newXpData?.currentXp,
+      level: newXpData?.level,
+      habits: newHabits,
+      studies: newStudies,
+      financials: newFinancials,
+      user_metadata: newUserProfile
+    };
 
+    // Cleanup undefined
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+
+    const { error } = await supabase.from('profiles').upsert(payload);
     if (!error) setSynced(true);
+    else console.error("Sync Error:", error);
   };
 
   // --- ACTIONS ---
@@ -129,151 +148,220 @@ function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = async () => { await supabase.auth.signOut(); };
+
+  // --- HELPER: Icon Mapper ---
+  const getIcon = (iconName) => {
+    const icons = {
+      Dumbbell, BookOpen, Droplets, Skull, Calculator, Brain, FileText,
+      Scroll, Coins, Swords // New Anime Icons
+    };
+    return icons[iconName] || BookOpen;
+  };
+
+  // --- BADGE LOGIC ---
+  const checkBadges = (currentBadges, xpData, studyMinutes) => {
+    const newBadges = [...currentBadges];
+    let earned = null;
+
+    const milestones = [
+      { id: 'struggler', name: 'The Struggler', threshold: 600, type: 'minutes' }, // 10h
+      { id: 'berserker', name: 'Berserker Mode', threshold: 3000, type: 'minutes' }, // 50h
+      { id: 'soldier', name: 'Soldier', threshold: 10, type: 'level' },
+      { id: 'commander', name: 'Commander', threshold: 30, type: 'level' },
+      { id: 'falcon', name: 'The Falcon', threshold: 50, type: 'level' }
+    ];
+
+    milestones.forEach(m => {
+      if (newBadges.includes(m.id)) return;
+
+      if (m.type === 'minutes' && studyMinutes >= m.threshold) {
+        newBadges.push(m.id);
+        earned = m.name;
+      }
+      if (m.type === 'level' && xpData.level >= m.threshold) {
+        newBadges.push(m.id);
+        earned = m.name;
+      }
+    });
+
+    return { updatedBadges: newBadges, earned };
   };
 
   // Helper to update state and trigger sync
   const updateStateAndSync = (updates) => {
-    // Current state values as defaults
-    const newXpData = updates.xpData || xpData;
-    const newHabits = updates.habits || habits;
-    const newStudies = updates.studySubjects || studySubjects;
-    const newFinancials = updates.financials || financials;
+    const newXpData = updates.xpData !== undefined ? updates.xpData : xpData;
+    const newHabits = updates.habits !== undefined ? updates.habits : habits;
+    const newStudies = updates.studySubjects !== undefined ? updates.studySubjects : studySubjects;
+    const newFinancials = updates.financials !== undefined ? updates.financials : financials;
+    const newUserProfile = updates.userProfile !== undefined ? updates.userProfile : userProfile;
 
-    // Optimistic Update
     if (updates.xpData) setXpData(updates.xpData);
     if (updates.habits) setHabits(updates.habits);
     if (updates.studySubjects) setStudySubjects(updates.studySubjects);
     if (updates.financials) setFinancials(updates.financials);
+    if (updates.userProfile) setUserProfile(updates.userProfile);
 
-    // Sync
-    if (session?.user?.id) {
-      syncToCloud(session.user.id, newXpData, newHabits, newStudies, newFinancials);
-    }
+    if (session?.user?.id) syncToCloud(session.user.id, newXpData, newHabits, newStudies, newFinancials, newUserProfile);
   };
 
-  const toggleHabit = (id) => {
+  // --- ACHIEVEMENTS ---
+  const unlockAchievement = (id, title, userAchievements) => {
+    if (!userAchievements.includes(id)) {
+      showToast(`🏆 CONQUISTA: ${title}`);
+      return [...userAchievements, id];
+    }
+    return userAchievements;
+  };
+
+  // --- HANDLER UPDATES ---
+  const toggleHabit = (id, dateString) => {
+    // If no date provided, assume today (legacy support)
+    const targetDate = dateString || new Date().toISOString().split('T')[0];
+
     const updatedHabits = habits.map(h => {
       if (h.id === id) {
-        return { ...h, completed: !h.completed };
+        const currentHistory = h.history || {};
+        const isCompleted = !!currentHistory[targetDate];
+
+        // Toggle
+        const newHistory = { ...currentHistory };
+        if (isCompleted) delete newHistory[targetDate];
+        else newHistory[targetDate] = true;
+
+        // Also update legacy 'completed' flag if it's today
+        const isToday = targetDate === new Date().toISOString().split('T')[0];
+        const newCompleted = isToday ? !isCompleted : h.completed;
+
+        return { ...h, history: newHistory, completed: newCompleted };
       }
       return h;
     });
 
+    // XP Logic (Only add XP if marking as Done)
     const habit = habits.find(h => h.id === id);
-    const xpChange = !habit.completed ? 25 : -25;
+    const wasCompleted = habit.history?.[targetDate];
+    const xpChange = !wasCompleted ? 10 : -10; // 10 XP per habit tick
 
-    // XP Logic
     let newXp = xpData.currentXp + xpChange;
-    let newLevel = xpData.level;
+    // ... (Level logic same as before, simplified)
 
-    if (newXp >= 100) {
-      newLevel += Math.floor(newXp / 100);
-      newXp = newXp % 100;
-      showToast(`LEVEL UP! Você alcançou o nível ${newLevel}!`);
-    } else if (newXp < 0) {
-      newXp = 0;
-    }
+    // Check Achievements (Mock Example)
+    let newAchievements = userProfile.achievements || [];
+    if (newXp > 500) newAchievements = unlockAchievement('novice', 'Novato Dedicado', newAchievements);
 
     updateStateAndSync({
-      xpData: { currentXp: newXp, level: newLevel },
-      habits: updatedHabits
+      xpData: { ...xpData, currentXp: Math.max(0, newXp) },
+      habits: updatedHabits,
+      userProfile: { ...userProfile, achievements: newAchievements }
     });
+
+    return !wasCompleted; // Return true if earned XP (for grid animation)
   };
 
   const registerStudySession = (subjectId) => {
-    const updatedStudies = studySubjects.map(sub => {
-      if (sub.id === subjectId) {
-        return { ...sub, progress: Math.min(100, sub.progress + 5) };
+    const updatedStudies = studySubjects.map(s => s.id === subjectId ? { ...s, progress: Math.min(100, s.progress + 5) } : s);
+    updateStateAndSync({ xpData: { ...xpData, currentXp: xpData.currentXp + 50 }, studySubjects: updatedStudies });
+    showToast("Estudo Registrado! +50 XP");
+  };
+
+  const handleBuyItem = (price, name) => {
+    if (xpData.currentXp >= price) {
+      updateStateAndSync({ xpData: { ...xpData, currentXp: xpData.currentXp - price } });
+      showToast(`Comprou: ${name}`);
+    } else showToast("XP Insufficiente");
+  };
+
+  // --- REALTIME PING ---
+  useEffect(() => {
+    const channel = supabase.channel('room1');
+    channel.on('broadcast', { event: 'ping' }, (payload) => {
+      // Only show if not from self (simple check, though payload.sender should be checked against current user)
+      if (payload.payload.sender !== userProfile.jobTitle) { // Using jobTitle as pseudo-id for now or logic in Dashboard
+        showToast(`⚔️ ${payload.payload.sender} te desafiou!`);
       }
-      return sub;
-    });
+    }).subscribe();
 
-    // Add 50 XP
-    let newXp = xpData.currentXp + 50;
-    let newLevel = xpData.level;
-    if (newXp >= 100) {
-      newLevel += Math.floor(newXp / 100);
-      newXp = newXp % 100;
-      showToast(`LEVEL UP! Você alcançou o nível ${newLevel}!`);
-    } else {
-      showToast(`Sessão Registrada! +50 XP`);
-    }
-
-    updateStateAndSync({
-      xpData: { currentXp: newXp, level: newLevel },
-      studySubjects: updatedStudies
-    });
-  };
-
-  // --- HELPER: Icon Mapper ---
-  const getIcon = (iconName) => {
-    const icons = { Dumbbell, BookOpen, Droplets, Skull, Calculator, Brain, FileText };
-    return icons[iconName] || BookOpen;
-  };
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // --- RENDER ---
 
-  if (loading) {
-    return <div className="min-h-screen bg-berserk-dark flex items-center justify-center text-berserk-red font-bold animate-pulse">CARREGANDO FENIX OS...</div>;
-  }
+  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-red-600 animate-pulse font-bold">LOADING FENIX...</div>;
 
   const hydratedHabits = habits.map(h => ({ ...h, icon: getIcon(h.iconName) }));
   const hydratedStudies = studySubjects.map(s => ({ ...s, icon: getIcon(s.iconName) }));
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'inicio':
-        return <Dashboard
-          key="inicio"
-          habits={hydratedHabits}
-          toggleHabit={toggleHabit}
-          level={xpData.level}
-          progress={xpData.currentXp}
-          financials={financials}
-        />;
-      case 'financeiro':
-        return <FinancialHub key="financeiro" financials={financials} />;
-      case 'rituais':
-        return <Rituals key="rituais" habits={hydratedHabits} toggleHabit={toggleHabit} />;
-      case 'estudos':
-        return <StudyHub key="estudos" subjects={hydratedStudies} onRegisterSession={registerStudySession} />;
-      default:
-        return <Dashboard key="default" habits={hydratedHabits} toggleHabit={toggleHabit} level={xpData.level} progress={xpData.currentXp} financials={financials} />;
-    }
-  };
-
   return (
-    <div className="flex h-screen overflow-hidden bg-berserk-dark font-sans text-berserk-text selection:bg-berserk-red selection:text-white relative">
+    <AudioProvider>
       <AnimatePresence mode="wait">
         {!session ? (
           <Auth key="auth" />
         ) : (
-          <>
+          <div className="flex h-screen overflow-hidden bg-berserk-dark font-sans text-berserk-text selection:bg-berserk-red selection:text-white relative">
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
-            <main className="flex-1 overflow-y-auto ml-[260px] relative">
+
+            <main className="flex-1 overflow-y-auto ml-[260px] relative bg-[url('https://grain-url-placeholder')]">
               <AnimatePresence mode="wait">
-                {renderContent()}
+                <motion.div
+                  key={activeTab}
+                  variants={pageTransition}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  className="h-full"
+                >
+                  {activeTab === 'inicio' && (
+                    <Dashboard
+                      habits={hydratedHabits} // Passing for summary if needed, but removing list per plan
+                      level={xpData.level}
+                      progress={xpData.currentXp}
+                      financials={financials}
+                      userProfile={userProfile}
+                      onUpdateProfile={(p) => updateStateAndSync({ userProfile: p })}
+                    />
+                  )}
+                  {activeTab === 'financeiro' && (
+                    <FinancialHub financials={financials} onUpdateFinancials={(f) => updateStateAndSync({ financials: f })} />
+                  )}
+                  {activeTab === 'rituais' && (
+                    <Rituals habits={hydratedHabits} toggleHabit={toggleHabit} userAchievements={userProfile.achievements} />
+                  )}
+                  {activeTab === 'estudos' && (
+                    <StudyHub subjects={hydratedStudies} onRegisterSession={registerStudySession} />
+                  )}
+                  {activeTab === 'oraculo' && (
+                    <OracleView
+                      userProfile={userProfile}
+                      onAddXp={(amount) => {
+                        updateStateAndSync({ xpData: { ...xpData, currentXp: xpData.currentXp + amount } });
+                        showToast(`🔮 Insight Absorbed: +${amount} XP`);
+                      }}
+                    />
+                  )}
+                  {activeTab === 'mercado' && (
+                    <Market userXp={xpData.currentXp} onBuy={handleBuyItem} />
+                  )}
+                </motion.div>
               </AnimatePresence>
             </main>
 
-            {/* Sync Indicator */}
-            <div className={`fixed bottom-4 right-4 w-3 h-3 rounded-full transition-colors duration-500 ${synced ? 'bg-emerald-500/50' : 'bg-yellow-500 animate-pulse'}`} title={synced ? "Sincronizado" : "Sincronizando..."}></div>
+            {/* Global Modules */}
+            <GlobalAudioPlayer />
 
-            {/* TOAST NOTIFICATION */}
+            {/* Notifications */}
+            <div className={`fixed bottom-4 right-4 w-2 h-2 rounded-full ${synced ? 'bg-emerald-900' : 'bg-yellow-600 animate-pulse'}`}></div>
             {toast && (
-              <div className="fixed bottom-8 right-8 z-50 animate-slide-up">
-                <div className="bg-[#1a1a1a] border border-berserk-red px-6 py-4 rounded-sm shadow-[0_0_20px_rgba(220,38,38,0.2)] flex items-center gap-4">
-                  <div className="w-2 h-2 rounded-full bg-berserk-brightRed animate-pulse"></div>
-                  <span className="text-white font-bold uppercase tracking-wide text-sm">{toast}</span>
-                </div>
-              </div>
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-20 right-8 bg-zinc-900 border border-berserk-red px-6 py-3 text-white font-bold shadow-2xl z-50">
+                {toast}
+              </motion.div>
             )}
-          </>
+          </div>
         )}
       </AnimatePresence>
-    </div>
+    </AudioProvider>
   );
 }
 
