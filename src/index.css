@@ -13,43 +13,345 @@ body,
 
 @layer base {
   body {
-    @apply bg-berserk-dark text-berserk-text min-h-screen antialiased selection:bg-berserk-red selection:text-white relative;
-    background-image: url('./assets/bg-guts.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    @apply bg-berserk-dark text-berserk-text min-h-screen antialiased selection:bg-berserk-red selection:text-white relative overflow-x-hidden;
+    background-color: #050505;
+    font-family: 'Inter', sans-serif;
   }
 
-  /* Dark Overlay */
+  /* ═══════════════════════════════════════════════════════
+     CRIMSON VIGNETTE — Pulsating Eclipse Edge Effect
+     ═══════════════════════════════════════════════════════ */
   body::before {
     content: "";
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(5, 5, 5, 0.85);
-    /* 85% opacity charcoal overly */
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(circle at 50% 50%, transparent 40%, rgba(127, 29, 29, 0.3) 80%, rgba(127, 29, 29, 0.5) 100%);
+    animation: crimsonPulse 8s ease-in-out infinite alternate;
+    z-index: -2;
+    pointer-events: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     PARALLAX GRAIN / DUST — Subtle noise texture overlay
+     ═══════════════════════════════════════════════════════ */
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.12;
     z-index: -1;
     pointer-events: none;
+    animation: grain 8s steps(10) infinite;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     CRIMSON PULSE KEYFRAMES — Breathing Eclipse Effect
+     ═══════════════════════════════════════════════════════ */
+  @keyframes crimsonPulse {
+    0% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes grain {
+
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+
+    10% {
+      transform: translate(-5%, -10%);
+    }
+
+    20% {
+      transform: translate(-15%, 5%);
+    }
+
+    30% {
+      transform: translate(7%, -25%);
+    }
+
+    40% {
+      transform: translate(-5%, 25%);
+    }
+
+    50% {
+      transform: translate(-15%, 10%);
+    }
+
+    60% {
+      transform: translate(15%, 0%);
+    }
+
+    70% {
+      transform: translate(0%, 15%);
+    }
+
+    80% {
+      transform: translate(3%, 35%);
+    }
+
+    90% {
+      transform: translate(-10%, 10%);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     TYPOGRAPHY — Medieval Serif headers, Clean Sans data
+     ═══════════════════════════════════════════════════════ */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+  }
+
+  p,
+  span,
+  td,
+  th,
+  input,
+  select,
+  textarea,
+  label,
+  li,
+  a,
+  button {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     GLASS CARD — Steel-to-Gold Gradient Border (Global)
+     Sacred frosted glass with metallic edge
+     ═══════════════════════════════════════════════════════ */
+  .glass-card {
+    background: rgba(10, 10, 10, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid transparent;
+    border-image: linear-gradient(135deg,
+        rgba(107, 114, 128, 0.6),
+        rgba(212, 175, 55, 0.7),
+        rgba(107, 114, 128, 0.6)) 1;
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(212, 175, 55, 0.08);
+    transition: box-shadow 0.4s ease, border-image 0.4s ease;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 20px rgba(220, 38, 38, 0.3),
+      0 8px 40px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(212, 175, 55, 0.15);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     GLASS ARMOR — Heavy metallic armor panel
+     ═══════════════════════════════════════════════════════ */
+  .glass-armor {
+    background: rgba(5, 5, 5, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid transparent;
+    border-image: linear-gradient(180deg,
+        rgba(107, 114, 128, 0.4),
+        rgba(212, 175, 55, 0.3),
+        rgba(40, 40, 40, 0.6)) 1;
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.8),
+      inset 0 0 20px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 rgba(212, 175, 55, 0.05);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     SACRED BORDER — Reusable Steel-to-Gold border
+     ═══════════════════════════════════════════════════════ */
+  .sacred-border {
+    border: 1px solid transparent;
+    border-image: linear-gradient(135deg,
+        rgba(107, 114, 128, 0.5),
+        rgba(212, 175, 55, 0.6),
+        rgba(107, 114, 128, 0.5)) 1;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     SCROLLBAR — Minimalist Dark with Gold hover
+     ═══════════════════════════════════════════════════════ */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #050505;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1a1a1a;
+    border-radius: 3px;
+    transition: background 0.3s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #D4AF37;
+    box-shadow: 0 0 6px rgba(212, 175, 55, 0.4);
   }
 }
 
-/* Custom scrollbar for that gritty feel */
-::-webkit-scrollbar {
-  width: 8px;
+/* ═══════════════════════════════════════════════════════
+   UTILITY CLASSES — Divine Glow Effects
+   ═══════════════════════════════════════════════════════ */
+
+/* Golden divine text glow */
+.divine-glow {
+  text-shadow:
+    0 0 8px rgba(212, 175, 55, 0.6),
+    0 0 25px rgba(212, 175, 55, 0.3),
+    0 0 50px rgba(212, 175, 55, 0.15);
 }
 
-::-webkit-scrollbar-track {
-  background: #0a0a0a;
+/* Status indicator glow (green pulse) */
+.status-glow {
+  box-shadow:
+    0 0 6px rgba(16, 185, 129, 0.8),
+    0 0 15px rgba(16, 185, 129, 0.4);
+  animation: statusPulse 2s ease-in-out infinite;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+@keyframes statusPulse {
+
+  0%,
+  100% {
+    box-shadow:
+      0 0 6px rgba(16, 185, 129, 0.8),
+      0 0 15px rgba(16, 185, 129, 0.4);
+  }
+
+  50% {
+    box-shadow:
+      0 0 10px rgba(16, 185, 129, 1),
+      0 0 25px rgba(16, 185, 129, 0.6),
+      0 0 40px rgba(16, 185, 129, 0.2);
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #7f1d1d;
+/* Sacred gold box glow */
+.glow-gold {
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+}
+
+/* Divine header text style */
+.text-divine-header {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Clean data text style */
+.text-data {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* ═══════════════════════════════════════════════════════
+   EMBER PARTICLES EFFECT
+   ═══════════════════════════════════════════════════════ */
+@keyframes rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateY(-100vh) scale(0);
+    opacity: 0;
+  }
+}
+
+.ember {
+  position: absolute;
+  bottom: -10px;
+  width: 4px;
+  height: 4px;
+  background: #D4AF37;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ef4444;
+  animation: rise 4s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOFI PLAYER — Golden glow state
+   ═══════════════════════════════════════════════════════ */
+.lofi-active {
+  border-color: rgba(212, 175, 55, 0.3) !important;
+  box-shadow:
+    0 0 12px rgba(212, 175, 55, 0.2),
+    0 0 30px rgba(212, 175, 55, 0.08);
+}
+
+.lofi-active .lofi-text {
+  color: #D4AF37;
+  text-shadow:
+    0 0 8px rgba(212, 175, 55, 0.5),
+    0 0 20px rgba(212, 175, 55, 0.2);
+  animation: lofiGlow 3s ease-in-out infinite;
+}
+
+@keyframes lofiGlow {
+
+  0%,
+  100% {
+    text-shadow:
+      0 0 8px rgba(212, 175, 55, 0.5),
+      0 0 20px rgba(212, 175, 55, 0.2);
+  }
+
+  50% {
+    text-shadow:
+      0 0 12px rgba(212, 175, 55, 0.7),
+      0 0 30px rgba(212, 175, 55, 0.35),
+      0 0 50px rgba(212, 175, 55, 0.15);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SISTEMA ONLINE — Ethereal footer indicator
+   ═══════════════════════════════════════════════════════ */
+.sistema-online-text {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(16, 185, 129, 0.8);
+  text-shadow:
+    0 0 6px rgba(16, 185, 129, 0.4),
+    0 0 15px rgba(16, 185, 129, 0.15);
 }

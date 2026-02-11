@@ -1,15 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Wallet, Dumbbell, Store, BookOpen, LogOut, Sword, Coins, Scroll, Skull, ShoppingBag, Sparkles, Swords } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { LayoutDashboard, Wine, Plus, Scroll, Sparkles, ShoppingBag, LogOut, Sword, BookOpen } from 'lucide-react';
+
 
 const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
     const navItems = [
-        { id: 'inicio', label: 'Início', icon: Swords },
-        { id: 'financeiro', label: 'Financeiro', icon: Coins },
-        { id: 'rituais', label: 'Rituais', icon: Skull },
-        { id: 'estudos', label: 'Estudos', icon: Scroll },
-        { id: 'oraculo', label: 'Oráculo', icon: Sparkles },
+        { id: 'inicio', label: 'Início', icon: Sword },
+        { id: 'financeiro', label: 'Financeiro', icon: Wine }, // "Cup"
+        { id: 'rotina', label: 'ROTINA', icon: Plus }, // "Cross"
+        { id: 'materias', label: 'MATÉRIAS', icon: BookOpen }, // "Book"
+        { id: 'oraculo', label: 'Oráculo', icon: Scroll },
         { id: 'mercado', label: 'Mercado', icon: ShoppingBag },
     ];
 
@@ -18,7 +18,7 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
             initial={{ x: -260 }}
             animate={{ x: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="fixed left-0 top-0 h-screen w-[260px] bg-[#0d0d0d] border-r border-[#7f1d1d] flex flex-col z-50"
+            className="hidden md:flex fixed left-0 top-0 h-screen w-[260px] bg-[#0d0d0d] border-r border-[#7f1d1d] flex-col z-50"
         >
             {/* Logo Section */}
             <div className="p-8 flex flex-col items-center border-b border-[#2a2a2a]/50">
@@ -72,9 +72,9 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => {
                     <span className="uppercase text-xs font-bold tracking-wider">Desconectar</span>
                 </motion.button>
 
-                <div className="mt-4 flex items-center justify-center gap-2 opacity-60">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-[10px] uppercase tracking-widest text-[#525252]">Sistema Online</span>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 status-glow"></div>
+                    <span className="sistema-online-text">Sistema Online</span>
                 </div>
             </div>
         </motion.aside>

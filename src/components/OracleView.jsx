@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Skull, Send, Sparkles, Brain, Zap } from 'lucide-react';
 
-const OracleView = ({ userProfile, onAddXp }) => {
+const OracleView = ({ userProfile, onAddXp, onCommand }) => {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState([
         {
@@ -12,6 +12,7 @@ const OracleView = ({ userProfile, onAddXp }) => {
         }
     ]);
     const [isTyping, setIsTyping] = useState(false);
+    const [isListening, setIsListening] = useState(false);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -38,21 +39,54 @@ const OracleView = ({ userProfile, onAddXp }) => {
         return "A corrente da causalidade é obscura. Clarifique sua intenção. Você está afiando sua mente para o Exame?";
     };
 
-    const handleSend = () => {
-        if (!input.trim()) return;
+    const handleSend = (textOverride = null) => {
+        const textToSend = textOverride || input;
+        if (!textToSend.trim()) return;
 
-        const userMsg = { id: Date.now(), sender: 'user', text: input };
+        const userMsg = { id: Date.now(), sender: 'user', text: textToSend };
         setMessages(prev => [...prev, userMsg]);
         setInput('');
         setIsTyping(true);
 
-        const responseText = generateResponse(userMsg.text);
+        // 1. Check for Command Action first
+        let responseText = null;
+        if (onCommand) {
+            responseText = onCommand(textToSend);
+        }
+
+        // 2. If no command matched, generate standard AI response
+        if (!responseText) {
+            responseText = generateResponse(textToSend);
+        }
 
         // Simulated Typing Effect
         setTimeout(() => {
             setIsTyping(false);
             setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'oracle', text: responseText, canReward: true }]);
         }, 2000);
+    };
+
+    const startListening = () => {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Seu navegador não suporta reconhecimento de voz.');
+            return;
+        }
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setInput(transcript);
+            handleSend(transcript); // Auto-send on voice
+        };
+
+        recognition.start();
     };
 
     const handleReward = (msgId) => {
@@ -62,94 +96,98 @@ const OracleView = ({ userProfile, onAddXp }) => {
     };
 
     return (
-        <div className="h-full flex flex-col p-8 max-w-6xl mx-auto relative overflow-hidden">
+        <div className="h-full flex flex-col p-4 md:p-8 max-w-5xl mx-auto relative overflow-hidden">
 
-            {/* Dynamic Background Elements */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-berserk-red/5 rounded-full blur-[100px] pointer-events-none animate-pulse-slow" />
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none" />
+            {/* BACKGROUND SYMBOL */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
+                <Skull size={400} strokeWidth={0.5} />
+            </div>
 
-            {/* Header */}
-            <header className="mb-8 flex items-center justify-between border-b border-berserk-red/30 pb-6 relative z-10">
-                <div className="flex items-center gap-5">
-                    <div className="p-4 bg-zinc-900 border border-berserk-red/50 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.4)]">
-                        <Skull size={40} className="text-berserk-red" />
+            {/* HEADER */}
+            <header className="flex items-center justify-between mb-8 z-10">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-zinc-900/80 border border-berserk-gold/30 rounded-full shadow-[0_0_15px_rgba(212,175,55,0.1)]">
+                        <Sparkles className="text-berserk-gold" size={24} />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white uppercase tracking-tighter">O Oráculo</h1>
-                        <p className="text-zinc-400 text-sm tracking-[0.2em] uppercase font-bold">Mentor: Cavaleiro da Caveira</p>
+                        <h1 className="text-3xl font-serif font-bold text-white uppercase tracking-wider drop-shadow-md">Oráculo do Abismo</h1>
+                        <div className="w-full h-[1px] bg-gradient-to-r from-berserk-gold to-transparent mt-1"></div>
                     </div>
-                </div>
-                <div className="flex items-center gap-3 px-6 py-3 bg-zinc-900/50 rounded-full border border-zinc-700 shadow-lg">
-                    <Brain size={20} className="text-emerald-500" />
-                    <span className="text-sm font-bold text-zinc-300">Contexto: <span className="text-white">Concurso BB 2027</span></span>
                 </div>
             </header>
 
-            {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto space-y-8 pr-6 scrollbar-thin scrollbar-thumb-berserk-red/30 scrollbar-track-transparent relative z-10">
+            {/* CHAT AREA (SCROLL) */}
+            <div className="flex-1 glass-card rounded-t-2xl border-b-0 p-6 overflow-y-auto space-y-6 relative custom-scrollbar">
                 {messages.map((msg) => (
                     <motion.div
                         key={msg.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`flex gap-4 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}
                     >
-                        <div className={`max-w-[85%] md:max-w-[75%] space-y-3`}>
-                            <div className={`p-8 rounded-2xl text-lg leading-relaxed border relative shadow-xl backdrop-blur-md
-                                ${msg.sender === 'user'
-                                    ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 text-white border-zinc-600 rounded-br-sm'
-                                    : 'bg-gradient-to-br from-red-950/50 to-black text-zinc-100 border-berserk-red/40 rounded-bl-sm'}
-                            `}>
-                                {msg.sender === 'oracle' && <Skull size={20} className="absolute -top-4 -left-3 text-berserk-red bg-black rounded-full border border-berserk-red/50 p-1" />}
-                                {msg.text}
-                            </div>
+                        {/* Avatar */}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border 
+                            ${msg.sender === 'oracle' ? 'bg-zinc-900 border-berserk-gold text-berserk-gold' : 'bg-red-900/20 border-berserk-red text-white'}`}>
+                            {msg.sender === 'oracle' ? <Skull size={20} /> : <div className="text-xs font-bold">EU</div>}
+                        </div>
 
-                            {/* Interaction Bar for Oracle Messages */}
+                        {/* Bubble */}
+                        <div className={`max-w-[80%] p-4 rounded-xl border text-sm md:text-base leading-relaxed shadow-lg
+                            ${msg.sender === 'oracle'
+                                ? 'bg-zinc-900/90 border-berserk-gold/20 text-berserk-text font-serif'
+                                : 'bg-berserk-red/10 border-berserk-red/30 text-white font-sans'}`}
+                        >
+                            <p>{msg.text}</p>
+                            {/* Reward Button for Oracle Messages */}
                             {msg.sender === 'oracle' && msg.canReward && (
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                <button
                                     onClick={() => handleReward(msg.id)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-950/40 border border-emerald-500/40 rounded-full text-xs text-emerald-400 font-bold uppercase tracking-wider hover:bg-emerald-900/60 transition-colors ml-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                                    className="mt-3 flex items-center gap-2 text-[10px] uppercase tracking-widest text-berserk-gold hover:text-white transition-colors"
                                 >
-                                    <Zap size={14} /> Insight Útil (+5 XP)
-                                </motion.button>
+                                    <Sparkles size={12} /> Reivindicar Sabedoria (+5 XP)
+                                </button>
                             )}
                         </div>
                     </motion.div>
                 ))}
 
                 {isTyping && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start items-center gap-4 text-berserk-red/80 ml-2">
-                        <Skull size={24} className="animate-pulse" />
-                        <span className="text-sm uppercase tracking-widest font-bold">Forjando Resposta...</span>
-                    </motion.div>
+                    <div className="flex gap-4">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-berserk-gold text-berserk-gold">
+                            <Skull size={20} className="animate-pulse" />
+                        </div>
+                        <div className="bg-zinc-900/50 p-4 rounded-xl border border-white/5 text-zinc-500 text-sm font-serif italic animate-pulse">
+                            O Oráculo consulta as sombras...
+                        </div>
+                    </div>
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="mt-8 relative z-10">
-                <div className="relative group">
+            {/* INPUT ALTAR */}
+            <div className="glass-card rounded-b-2xl border-t-0 p-4 z-20">
+                <div className="relative flex items-center gap-2">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Peça orientação para o Exame..."
-                        className="w-full bg-black/80 border border-zinc-700 p-6 pl-8 pr-20 rounded-2xl text-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-berserk-red focus:ring-1 focus:ring-berserk-red transition-all shadow-2xl group-hover:border-zinc-600"
+                        placeholder="Insculpam sua dúvida ou comando (ex: 'Gastei 50')..."
+                        className="w-full bg-zinc-900/80 border border-berserk-border text-white placeholder-zinc-600 p-4 pl-6 rounded-xl focus:outline-none focus:border-berserk-gold transition-colors font-serif"
                     />
                     <button
-                        onClick={handleSend}
-                        disabled={!input.trim() || isTyping}
-                        className="absolute right-4 top-4 p-3 bg-berserk-red text-white rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                        onClick={() => handleSend()}
+                        className="absolute right-2 p-3 bg-berserk-gold/10 hover:bg-berserk-gold/20 text-berserk-gold rounded-lg transition-colors"
                     >
-                        <Send size={24} />
+                        <Send size={20} />
+                    </button>
+                    <button
+                        onClick={startListening}
+                        className={`absolute right-14 p-3 rounded-lg transition-colors ${isListening ? 'bg-berserk-red text-white animate-pulse' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                    >
+                        <Zap size={20} />
                     </button>
                 </div>
-                <p className="text-center text-xs text-zinc-500 mt-4 uppercase tracking-[0.2em] font-bold">
-                    "Lute, Desafie e Erga-se para Lutar novamente."
-                </p>
             </div>
         </div>
     );

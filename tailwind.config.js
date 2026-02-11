@@ -6,15 +6,23 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        serif: ['Cinzel', 'serif'],
+        sans: ['Inter', 'sans-serif'],
+      },
       colors: {
         berserk: {
-          dark: '#050505', // Deep abyss black
-          start: '#0a0a0a',
-          card: '#121212', // Dark iron
-          border: '#2a2a2a', // Rusted iron shade
-          red: '#7f1d1d', // Dried blood
+          dark: '#000000', // Absolute Black
+          card: '#0a0a0a', // Almost black
+          border: '#1a1a1a', // Subtle dark border
+          red: '#7f1d1d', // Deep Blood Red
           brightRed: '#dc2626', // Fresh blood accent
-          text: '#d4d4d4', // Bone white
+          gold: '#D4AF37', // Antique Gold
+          goldDim: '#8a7e4a', // Dim Antique Gold
+          sacredGold: '#FFD700', // Sacred Gold (brighter)
+          steel: '#6b7280', // Steel Gray
+          crimson: '#4a0000', // Deep Crimson
+          text: '#e5e5e5', // High readability light gray
           muted: '#525252', // Ash gray
         }
       },
@@ -23,6 +31,8 @@ export default {
         'glow-red-strong': '0 0 25px rgba(220, 38, 38, 0.7)',
         'pulse-red': '0 0 10px rgba(220, 38, 38, 0.4)',
         'card-hover': '0 0 20px rgba(127, 29, 29, 0.3)',
+        'glow-gold': '0 0 15px rgba(212, 175, 55, 0.4)',
+        'glow-gold-strong': '0 0 25px rgba(212, 175, 55, 0.6)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
@@ -31,6 +41,8 @@ export default {
         'breath': 'breath 4s ease-in-out infinite',
         'glow-pulse': 'box-shadow-pulse 2s infinite',
         'blob': 'blob 7s infinite',
+        'divine-aura': 'divineAura 30s ease-in-out infinite alternate',
+        'spin-slow': 'spin 3s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -58,6 +70,11 @@ export default {
         'pulse-slow': {
           "0%, 100%": { opacity: 1 },
           "50%": { opacity: 0.5 }
+        },
+        divineAura: {
+          "0%": { transform: "translate(0, 0) rotate(0deg) scale(1)" },
+          "50%": { transform: "translate(10px, -15px) rotate(-0.5deg) scale(0.98)" },
+          "100%": { transform: "translate(-20px, 15px) rotate(1.5deg) scale(1)" }
         },
       }
     },

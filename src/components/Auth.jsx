@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Sword, Skull } from 'lucide-react';
 
 const Auth = () => {
+    const { signIn, signUp } = useAuth();
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -12,15 +13,21 @@ const Auth = () => {
     const handleAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
-        if (isSignUp) {
-            const { error } = await supabase.auth.signUp({ email, password });
-            if (error) alert(error.message);
-            else alert('Check your email for the login link!');
-        } else {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message);
+        try {
+            if (isSignUp) {
+                // SignUp with a default username derived from email or empty for now
+                // The new signUp function expects (email, password, username)
+                const username = email.split('@')[0];
+                await signUp(email, password, username);
+                alert('Check your email for the login link!');
+            } else {
+                await signIn(email, password);
+            }
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
