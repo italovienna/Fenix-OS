@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
-import BottomNav from './components/BottomNav';
 import Dashboard from './components/Dashboard';
 import FinancialHub from './components/FinancialHub';
 import Routine from './components/Routine';
@@ -58,7 +57,6 @@ function AppInner() {
   return (
     <div className="flex h-screen overflow-hidden bg-black font-sans text-white selection:bg-berserk-red selection:text-white relative">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={async () => await signOut()} />
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="flex-1 overflow-y-auto ml-0 md:ml-[260px] pb-24 md:pb-0 relative">
         {/* GLOBAL REWARD BANNER — visible across all tabs */}
